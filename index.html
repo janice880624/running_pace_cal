@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Pace Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Running Pace Calculator</h1>
+    <form id="running-form">
+        <label>
+            Select Distance:
+            <select id="distance">
+                <option value="42">42K</option>
+                <option value="21">21K</option>
+            </select>
+        </label>
+        <br><br>
+        <label>
+            Starting Speed (mm:ss per km):
+            <input type="text" id="starting-speed" placeholder="e.g., 5:30" required>
+        </label>
+        <br><br>
+        <label>
+            Speed Increase per km (seconds):
+            <input type="number" id="speed-increase" required>
+        </label>
+        <br><br>
+        <label>
+            Last Fixed KM Count:
+            <input type="number" id="last-kms" required>
+        </label>
+        <br><br>
+        <button type="button" onclick="calculatePace()">Calculate</button>
+    </form>
+
+    <h2>Result</h2>
+    <div id="result"></div>
+    <table id="pace-table">
+        <thead>
+            <tr>
+                <th>Kilometer</th>
+                <th>Pace (mm:ss per km)</th>
+                <th>Cumulative Time</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+
+        
+    </table>
+
+    <footer>
+      <p>This running pace calculator was created by Janice. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function parseTimeToMinutes(timeStr) {
+            const [minutes, seconds] = timeStr.split(':').map(Number);
+            return minutes + seconds / 60;
+        }
+
+        function formatTime(minutes) {
+            const totalSeconds = Math.round(minutes * 60);
+            const hours = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+            return `${hours}h ${mins}m ${secs}s`;
+        }
+
+        function calculatePace() {
+            const distance = parseInt(document.getElementById('distance').value);
+            const startingSpeed = parseTimeToMinutes(document.getElementById('starting-speed').value);
+            const speedIncrease = parseFloat(document.getElementById('speed-increase').value) / 60; // Convert seconds to minutes
+            const lastKms = parseInt(document.getElementById('last-kms').value);
+
+            const resultDiv = document.getElementById('result');
+            const paceTable = document.getElementById('pace-table').querySelector('tbody');
+
+            let totalTime = 0;
+            let pace = startingSpeed;
+            const paceData = [];
+
+            for (let km = 1; km <= distance; km++) {
+                if (km > distance - lastKms) {
+                    pace = paceData[paceData.length - 1]?.paceInMinutes || startingSpeed; // Use last pace
+                } else if (km > 1) {
+                    pace -= speedIncrease;
+                }
+
+                totalTime += pace;
+                const formattedTime = formatTime(totalTime);
+
+                paceData.push({
+                    km,
+                    pace: `${Math.floor(pace)}:${Math.round((pace % 1) * 60).toString().padStart(2, '0')}`,
+                    paceInMinutes: pace,
+                    time: formattedTime
+                });
+            }
+
+            resultDiv.innerHTML = `<p>Total Time: ${paceData[paceData.length - 1].time}</p>`;
+
+            paceTable.innerHTML = '';
+            paceData.forEach(data => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${data.km}</td>
+                    <td>${data.pace}</td>
+                    <td>${data.time}</td>
+                `;
+                paceTable.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
